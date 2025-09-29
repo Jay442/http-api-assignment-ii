@@ -5,8 +5,129 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('nameForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        handleAddUser();
+      });
+      document.getElementById('userForm').addEventListener('submit', handleGetUser);
+    });
 
+    async function handleAddUser(event) {
+      const name = document.getElementById('nameField').value;
+      const age = document.getElementById('ageField').value;
+      
+      try {
+        const response = await fetch('/addUser', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, age })
+        });
+
+        const contentSection = document.getElementById('content');
+        
+        if (response.status === 201) {
+          const data = await response.json();
+          console.log(data);
+          contentSection.innerHTML = `
+            <div class="success">
+              <h4>Created</h4>
+              <p>${data.message}</p>
+              <pre>${JSON.stringify(data.user)}</pre>
+            </div>
+          `;
+        } else if (response.status === 204) {
+          contentSection.innerHTML = `
+            <div class="success">
+              <h4>Updated</h4>
+              <p>User age updated successfully</p>
+            </div>
+          `;
+        } else if (response.status === 400) {
+          const error = await response.json();
+          console.log(error);
+          contentSection.innerHTML = `
+            <div class="error">
+              <h4>Error (${response.status})</h4>
+              <p>${error.message}</p>
+              <p><small>Error ID: ${error.id}</small></p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('content').innerHTML = `
+          <div class="error">
+            <h4>Network Error</h4>
+            <p>Failed to connect to server</p>
+          </div>
+        `;
+      }
+    }
+
+    async function handleGetUser(event) {
+      event.preventDefault();
+      
+      const url = document.getElementById('urlField').value;
+      const method = document.getElementById('methodSelect').value.toUpperCase();
+      
+      try {
+        const response = await fetch(url, {
+          method: method
+        });
+
+        const contentSection = document.getElementById('content');
+        
+        if (method === 'HEAD') {
+          if (response.ok) {
+            contentSection.innerHTML = `
+              <div class="success">
+                <h4>Success</h4>
+              </div>
+            `;
+          } else {
+            contentSection.innerHTML = `
+              <div class="error">
+                <h4>Not Found</h4>
+              </div>
+            `;
+          }
+        } else {
+          const data = await response.json();
+          
+          console.log(data);
+          if (response.ok) {
+            contentSection.innerHTML = `
+              <div class="success">
+                <h4>Success</h4>
+                <p>${data.message}</p>
+                ${data.users ? `<pre>[\n${data.users.map(user => JSON.stringify(user)).join(',\n')}\n]</pre>` : ''}
+              </div>
+            `;
+          } else {
+            contentSection.innerHTML = `
+              <div class="error">
+                <h4>Not Found</h4>
+                <p>${data.message}</p>
+                <p><small>Error ID: ${data.id}</small></p>
+              </div>
+            `;
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('content').innerHTML = `
+          <div class="error">
+            <h4>Network Error</h4>
+            <p>Failed to connect to server</p>
+          </div>
+        `;
+      }
+    }
   </script>
+  
 </head>
 <body>
   <section id="top">
